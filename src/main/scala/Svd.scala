@@ -8,7 +8,7 @@ import akka.util.Timeout
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-case object Initialization
+case class Initialization(workNumber: Int, row: Int, col: Int)
 case object InnerOrth
 case object InnerOrthDone
 case object OutterOrth
@@ -25,18 +25,9 @@ case object HasDone
 case class InitialData(upBlock: Matrix, dnBlock: Matrix, tol: Double, workerNumber: Int)
 
 class SvdMaster extends Actor{
-  val workNumber = 3
-  val matrix = Matrix.random(4, 17)
-/*  matrix.set(0, 0, 1)
-  matrix.set(0, 1, 2)
-  matrix.set(0, 2, 3)
-  matrix.set(0, 3, 4)
-  matrix.set(1, 0, 5)
-  matrix.set(1, 1, 6)
-  matrix.set(1, 2, 7)
-  matrix.set(1, 3, 8)*/
-  println(s"initialized matrix size is ${matrix.row} x ${matrix.col}")
-  val tol = math.pow(matrix.norm, 2) * 1e-15
+  var workNumber = 0
+  var matrix = Matrix.emptyMatrix()
+  var tol = 0d
   var firstProcessNumber = 0
   var outterOrthNumber = 0
   var secondProcessNumber = 0
@@ -50,9 +41,15 @@ class SvdMaster extends Actor{
   var maxSteps = 20
 
   def receive = {
-    case Initialization => {
+    case Initialization(w, r, c) => {
       //println("in master initialization")
       //split a matrix by columns with equal size
+      workNumber = w
+      matrix = Matrix.random(r, c)
+      tol = math.pow(matrix.norm, 2) * 1e-15
+
+      println(s"initialized matrix size is ${matrix.row} x ${matrix.col}")
+
       val blockList = matrix.sliceByColEqually(workNumber)
       for (i <- 1 to workNumber) {
         val actor = context.actorOf(Props(new SvdWorker(i)), name = "worker" + i)
@@ -60,6 +57,7 @@ class SvdMaster extends Actor{
         actor ! new InitialData(block(0), block(1), tol, workNumber)
         actorList = actor :: actorList
       }
+
       for (actor <- actorList)
         actor ! InnerOrth
     }
@@ -290,15 +288,24 @@ class SvdWorker(id: Int) extends Actor {
   }
 }
 
-object Svd extends App {
-  val system = ActorSystem("ParallelSVD")
-  val actor = system.actorOf(Props[SvdMaster], name = "master")
-  actor ! Initialization
-  implicit val timeout = Timeout(10 minute)
-  val future = actor ? HasDone
-  val result = Await.result(future, timeout.duration).asInstanceOf[Matrix]
-  actor ! PoisonPill
-  println(result.normalizeU.sliceByCol(0, result.row-1))
-  Thread.sleep(1000)
-  system.shutdown()
+object Svd {
+  def main(args: Array[String]) {
+    // args(0) is the worker number
+    // args(1) and args(2) is the matrix row and col size
+    if (args.size == 3) {
+      val system = ActorSystem("ParallelSVD")
+      val actor = system.actorOf(Props[SvdMaster], name = "master")
+      val startTime = System.currentTimeMillis()
+      actor ! new Initialization(args(0).toInt, args(1).toInt, args(2).toInt)
+      implicit val timeout = Timeout(10 minute)
+      val future = actor ? HasDone
+      val result = Await.result(future, timeout.duration).asInstanceOf[Matrix]
+      actor ! PoisonPill
+      val endTime = System.currentTimeMillis()
+      println("time spend is " + (endTime - startTime) /  1000.0 + "s")
+      println(result.normalizeU.sliceByCol(0, result.row - 1))
+      Thread.sleep(2000)
+      system.shutdown()
+    }
+  }
 }
