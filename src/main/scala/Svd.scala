@@ -305,7 +305,7 @@ object Svd {
       actor ! PoisonPill
       val endTime = System.currentTimeMillis()
       println("time spend is " + (endTime - startTime) /  1000.0 + "s")
-      println(result.normalizeU.sliceByCol(0, result.row - 1))
+      //println(result.normalizeU.sliceByCol(0, result.row - 1))
       Thread.sleep(2000)
       system.shutdown()
     }
