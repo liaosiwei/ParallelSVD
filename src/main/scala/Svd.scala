@@ -8,7 +8,7 @@ import akka.util.Timeout
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-case class Initialization(workNumber: Int, row: Int, col: Int)
+case class Initialization(workNumber: Int, maxStep: Int, row: Int, col: Int)
 case object InnerOrth
 case object InnerOrthDone
 case object OutterOrth
@@ -38,13 +38,14 @@ class SvdMaster extends Actor{
   var lastProcessNumber = 0
   var matrixU = Matrix.emptyMatrix()
   var sweepCount = 0
-  var maxSteps = 20
+  var maxSteps = 40
 
   def receive = {
-    case Initialization(w, r, c) => {
+    case Initialization(w, s, r, c) => {
       //println("in master initialization")
       //split a matrix by columns with equal size
       workNumber = w
+      maxSteps = s
       matrix = Matrix.random(r, c)
       tol = math.pow(matrix.norm, 2) * 1e-15
 
@@ -292,11 +293,12 @@ object Svd {
   def main(args: Array[String]) {
     // args(0) is the worker number
     // args(1) and args(2) is the matrix row and col size
-    if (args.size == 3) {
+    if (args.size == 4) {
       val system = ActorSystem("ParallelSVD")
       val actor = system.actorOf(Props[SvdMaster], name = "master")
       val startTime = System.currentTimeMillis()
-      actor ! new Initialization(args(0).toInt, args(1).toInt, args(2).toInt)
+      val arg = args.map(x => x.toInt)
+      actor ! new Initialization(arg(0), arg(1), arg(2), arg(3))
       implicit val timeout = Timeout(10 minute)
       val future = actor ? HasDone
       val result = Await.result(future, timeout.duration).asInstanceOf[Matrix]
@@ -307,5 +309,7 @@ object Svd {
       Thread.sleep(2000)
       system.shutdown()
     }
+    else
+      println("illegal parameters")
   }
 }
