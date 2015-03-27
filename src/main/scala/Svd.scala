@@ -299,13 +299,13 @@ object Svd {
       val startTime = System.currentTimeMillis()
       val arg = args.map(x => x.toInt)
       actor ! new Initialization(arg(0), arg(1), arg(2), arg(3))
-      implicit val timeout = Timeout(0 second)
+      implicit val timeout = Timeout(5 day)
       val future = actor ? HasDone
       val result = Await.result(future, timeout.duration).asInstanceOf[Matrix]
       actor ! PoisonPill
       val endTime = System.currentTimeMillis()
       println("time spend is " + (endTime - startTime) /  1000.0 + "s")
-      //println(result.normalizeU.sliceByCol(0, result.row - 1))
+      val res = result.normalizeU.sliceByCol(0, result.row - 1)
       Thread.sleep(2000)
       system.shutdown()
     }
