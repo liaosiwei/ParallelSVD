@@ -35,7 +35,7 @@ class SvdMaster extends Actor{
   matrix.set(1, 1, 6)
   matrix.set(1, 2, 7)
   matrix.set(1, 3, 8)*/
-  println("initialized matrix is" + matrix)
+  println(s"initialized matrix size is ${matrix.row} x ${matrix.col}")
   val tol = math.pow(matrix.norm, 2) * 1e-15
   var firstProcessNumber = 0
   var outterOrthNumber = 0
@@ -294,11 +294,11 @@ object Svd extends App {
   val system = ActorSystem("ParallelSVD")
   val actor = system.actorOf(Props[SvdMaster], name = "master")
   actor ! Initialization
-  implicit val timeout = Timeout(200 second)
+  implicit val timeout = Timeout(10 minute)
   val future = actor ? HasDone
   val result = Await.result(future, timeout.duration).asInstanceOf[Matrix]
   actor ! PoisonPill
-  println(result.normalizeU)
+  println(result.normalizeU.sliceByCol(0, result.row-1))
   Thread.sleep(1000)
   system.shutdown()
 }
