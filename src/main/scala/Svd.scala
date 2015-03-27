@@ -38,7 +38,7 @@ class SvdMaster extends Actor{
   var lastProcessNumber = 0
   var matrixU = Matrix.emptyMatrix()
   var sweepCount = 0
-  var maxSteps = 40
+  var maxSteps = 75
 
   def receive = {
     case Initialization(w, s, r, c) => {
@@ -299,7 +299,7 @@ object Svd {
       val startTime = System.currentTimeMillis()
       val arg = args.map(x => x.toInt)
       actor ! new Initialization(arg(0), arg(1), arg(2), arg(3))
-      implicit val timeout = Timeout(10 minute)
+      implicit val timeout = Timeout(0 second)
       val future = actor ? HasDone
       val result = Await.result(future, timeout.duration).asInstanceOf[Matrix]
       actor ! PoisonPill
