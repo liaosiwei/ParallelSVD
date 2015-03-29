@@ -1,3 +1,5 @@
+import datatype.Tensor3
+
 val tensor = Tensor3.random(2, 2,2)
 tensor.get(0, 0, 0)
 tensor.get(0, 1, 0)

@@ -1,7 +1,10 @@
+package datatype
 /**
  * Created on 15/3/21.
  */
-class Vec(val size: Int) {
+
+@SerialVersionUID(123L)
+class Vec(val size: Int) extends Serializable{
   val vec = new Array[Double](size)
   lazy val norm = math.sqrt(vec.map(x => x*x).sum)
 

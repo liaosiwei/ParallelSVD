@@ -1,9 +1,12 @@
+package prototype
+
 /**
  * Created on 15/3/25.
  */
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
+import datatype.Matrix
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -66,7 +69,7 @@ class SvdMaster extends Actor{
       firstProcessNumber += 1
       if (firstProcessNumber == workNumber) {
         firstProcessNumber = 0
-        actorList.map(a => a ! OutterOrth)
+        actorList.foreach(a => a ! OutterOrth)
         //println("Master: in InnerOrthDone")
       }
     }
@@ -87,10 +90,10 @@ class SvdMaster extends Actor{
       if (secondProcessNumber == workNumber) {
         secondProcessNumber = 0
         if (allConverged) {
-          actorList.map(actor => actor ! RetrieveBlocks)
+          actorList.foreach(actor => actor ! RetrieveBlocks)
         }
         else {
-          actorList.map(a => a ! InnerOrth)
+          actorList.foreach(a => a ! InnerOrth)
           allConverged = true
         }
         //println("Master: in IterationEnd")
@@ -110,7 +113,7 @@ class SvdMaster extends Actor{
       lastProcessNumber += 1
       if (lastProcessNumber == workNumber) {
         //println("Master: in ReturnedBlock")
-        actorList.map(actor => context.stop(actor))
+        actorList.foreach(actor => context.stop(actor))
         println(s"sweep count is ${sweepCount}")
         mainThread ! matrixU
       }
@@ -119,21 +122,21 @@ class SvdMaster extends Actor{
     case RoundRobinProcessDone => {
       iteration += 1
       if (iteration == workNumber * 2 - 1) {
-        actorList.map(a => a ! QueryConverged)
+        actorList.foreach(a => a ! QueryConverged)
         iteration = 0
         sweepCount += 1
         maxSteps -= 1
         if (maxSteps == 0) {
-          actorList.map(actor => actor ! RetrieveBlocks)
+          actorList.foreach(actor => actor ! RetrieveBlocks)
           println("iteration exceed the max steps and forced quit")
         }
         println(s"Master: in RoundRobinProcessDone sweep count ${sweepCount}")
       }
       else
-        actorList.map(a => a ! OutterOrth)
+        actorList.foreach(a => a ! OutterOrth)
     }
 
-    case HasDone => mainThread = sender
+    case HasDone => mainThread = sender()
   }
 }
 
@@ -293,13 +296,13 @@ object Svd {
   def main(args: Array[String]) {
     // args(0) is the worker number
     // args(1) and args(2) is the matrix row and col size
-    if (args.size == 4) {
+    if (args.length == 4) {
       val system = ActorSystem("ParallelSVD")
       val actor = system.actorOf(Props[SvdMaster], name = "master")
       val startTime = System.currentTimeMillis()
       val arg = args.map(x => x.toInt)
       actor ! new Initialization(arg(0), arg(1), arg(2), arg(3))
-      implicit val timeout = Timeout(5 day)
+      implicit val timeout = Timeout(5.day)
       val future = actor ? HasDone
       val result = Await.result(future, timeout.duration).asInstanceOf[Matrix]
       actor ! PoisonPill

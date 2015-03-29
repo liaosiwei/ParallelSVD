@@ -1,7 +1,13 @@
+package datatype
+
+import java.io.{FileInputStream, ObjectInputStream, FileOutputStream, ObjectOutputStream}
+
 /**
  * Created on 15/3/21.
  */
-class Matrix(val row: Int, val col: Int) {
+
+@SerialVersionUID(100L)
+class Matrix(val row: Int, val col: Int) extends Serializable{
   val matrix = Array.ofDim[Double](col, row)
   val size = (row, col)
   lazy val norm = {
@@ -136,4 +142,19 @@ object Matrix {
     m
   }
   def emptyMatrix() = new Matrix(0, 0)
+}
+
+object SerializationDemo extends App { // (1) create a Stock instance
+  val matrix = Matrix.random(4, 4)
+  println(matrix)
+  // (2) write the instance out to a file
+  val oos = new ObjectOutputStream(new FileOutputStream("/tmp/nflx"))
+  oos.writeObject(matrix)
+  oos.close
+  // (3) read the object back in
+  val ois = new ObjectInputStream(new FileInputStream("/tmp/nflx"))
+  val stock = ois.readObject.asInstanceOf[Matrix]
+  ois.close
+  // (4) print the object that was read back in
+  println(matrix)
 }

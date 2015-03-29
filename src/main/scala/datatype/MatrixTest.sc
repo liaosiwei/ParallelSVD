@@ -1,3 +1,5 @@
+import datatype.Matrix
+
 val m = Matrix(3, 4)
 m.set(1, 2, 1.2f)
 m.set(2, 2, 2f)
