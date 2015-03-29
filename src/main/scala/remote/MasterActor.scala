@@ -6,6 +6,7 @@ package remote
 
 import akka.actor._
 import datatype.Matrix
+import MessageType._
 
 class MasterActor extends Actor{
   var workNumber = 0

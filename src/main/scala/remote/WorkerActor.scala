@@ -6,6 +6,7 @@ package remote
 
 import akka.actor._
 import datatype.Matrix
+import MessageType._
 
 class WorkerActor(id: Int) extends Actor{
   var upDataBlock = Matrix.emptyMatrix()

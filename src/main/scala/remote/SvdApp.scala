@@ -2,6 +2,7 @@ package remote
 
 import akka.actor.{Props, ActorSystem, PoisonPill}
 import akka.util.Timeout
+import remote.MessageType.{HasDone, Initialization}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import akka.pattern.ask
